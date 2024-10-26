@@ -17,9 +17,6 @@ const gameManager = new GameManager()
 wss.on('connection',(socket)=>{
     socket.on('error',e => console.log(e))
     gameManager.addUser(socket)
-    
-    // socket.on('message',(data)=>{
-    // })
 
     socket.on('close',()=>{
         gameManager.removeUser(socket)

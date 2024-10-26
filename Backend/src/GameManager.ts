@@ -20,6 +20,7 @@ export class GameManager {
 
   removeUser(user: WebSocket) {
     this.users = this.users.filter((u) => u !== user);
+    //remove user from the game
   }
 
   startGame(player1: WebSocket, player2: WebSocket) {
