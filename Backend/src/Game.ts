@@ -22,8 +22,10 @@ export class Game{
         from: string,
         to: string
     }){
+        console.log(move)
         //check if players turn
         if( (this.moveCount%2===0 && socket === this.player2) || (this.moveCount%2===1 && socket === this.player1) ){
+            console.log("Invalid player move")
             return
         }
         
@@ -33,6 +35,7 @@ export class Game{
         }
         catch(e){
             console.log(e)
+            return
         }
         
         //check if checkmate
@@ -47,11 +50,11 @@ export class Game{
         //let both players know the move is made
         this.player1.send(JSON.stringify({
             type: MOVE,
-            payload: move
+            payload: this.game.fen()
         }))        
         this.player2.send(JSON.stringify({
             type: MOVE,
-            payload: move
+            payload: this.game.fen()
         }))  
 
         this.moveCount++

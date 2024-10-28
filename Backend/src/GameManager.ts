@@ -48,12 +48,14 @@ export class GameManager {
             this.startGame(this.pendingUser, socket);
             this.pendingUser = null
           }
+          break
         case MOVE:
           //find the game and send that move
           const game = this.games.find(
             (game) => game.player1 === socket || game.player2 === socket
           );
           game && game.makeMove(socket, message.move)
+          break
       }
     });
   }
