@@ -1,6 +1,6 @@
 import { Chess, Move } from "chess.js"
 import WebSocket from "ws";
-import { GAME_OVER, MOVE } from "./messages";
+import { GAME_OVER, GAME_OVER_METHOD, MOVE } from "./messages";
 
 //When 2 player join, UserManager will start the Game
 export class Game{
@@ -18,14 +18,29 @@ export class Game{
         this.moveCount = 0
     }
 
+    private GameOverMethod(){
+        let method=""
+        if(this.game.isCheckmate()){
+            method=GAME_OVER_METHOD.CHECKMATE
+        }
+        else if(this.game.isStalemate()){
+            method=GAME_OVER_METHOD.STALEMATE
+        }
+        else if(this.game.isInsufficientMaterial()){
+            method=GAME_OVER_METHOD.INSUFFICIENT_MATERIAL
+        }
+        else if(this.game.isThreefoldRepetition()){
+            method=GAME_OVER_METHOD.THREE_FOLD_REPETITION
+        }
+        return method
+    }
+    
     public makeMove(socket: WebSocket, move: {
         from: string,
         to: string
     }){
-        console.log(move)
         //check if players turn
         if( (this.moveCount%2===0 && socket === this.player2) || (this.moveCount%2===1 && socket === this.player1) ){
-            console.log("Invalid player move")
             return
         }
         
@@ -34,17 +49,32 @@ export class Game{
             this.game.move(move)      
         }
         catch(e){
-            console.log(e)
             return
         }
         
         //check if checkmate
         if(this.game.isGameOver()){
-            const winner = this.moveCount%2 === 0 ? "white won" : "black won"
+            const winner = this.moveCount%2 === 0 ? "white" : "black"
+            const method = this.GameOverMethod()
+            const draw = this.game.isDraw()
+            
             this.player1.send(JSON.stringify({
                 type: GAME_OVER,
-                payload: winner
+                payload: {
+                    draw: draw,
+                    winner: winner,
+                    method: method
+                }
             }))
+            this.player2.send(JSON.stringify({
+                type: GAME_OVER,
+                payload: {
+                    draw: draw,
+                    winner: winner,
+                    method: method
+                }
+            }))
+
         }
 
         //let both players know the move is made
