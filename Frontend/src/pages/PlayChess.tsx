@@ -1,25 +1,27 @@
-import { Chess, Square } from "chess.js";
-import { useState } from "react";
+import { Square } from "chess.js";
+import { useState, useEffect } from "react";
 import { Chessboard } from "react-chessboard";
 import { useSocket } from "../hooks/useSocket";
-import { GAME_OVER, GAME_OVER_METHOD, INIT_GAME, MOVE } from "../utils/messages";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  GAME_OVER,
+  INIT_GAME,
+  MOVE,
+} from "../utils/messages";
 import GameOverPopup from "../components/GameOverPopup";
+import Spinner from "../components/Spinner";
 
-interface Result{
-  outcome: string,
-  method: string
+interface Result {
+  outcome: string;
+  method: string;
 }
 
 function PlayChess() {
   const socket = useSocket();
   // const [game] = useState<Chess>(new Chess());
-  const [color, setColor] = useState<"white" | "black">("white");
+  const [color, setColor] = useState<"white" | "black">();
   const [fen, setFen] = useState<string>("start");
-  const [result, setResult] = useState<Result | null>(null)
-
-  const navigate = useNavigate();
+  const [result, setResult] = useState<Result | null>(null);
+  const [search, setSearch] = useState<boolean | undefined>(undefined)
 
   useEffect(() => {
     if (!socket) {
@@ -30,30 +32,29 @@ function PlayChess() {
       switch (data.type) {
         case INIT_GAME:
           setColor(data.payload);
+          setSearch(false)
           break;
         case MOVE:
           setFen(data.payload);
-          break;  
+          break;
         case GAME_OVER:
-          let outcome=""
-          if(data.payload.draw === true){
-            outcome = "Draw"
-          }
-          else if(data.payload.winner === color){
-            outcome = "You Won"
-          }
-          else{
-            outcome = "You Lost"
+          let outcome = "";
+          if (data.payload.draw === true) {
+            outcome = "Draw";
+          } else if (data.payload.winner === color) {
+            outcome = "You Won";
+          } else {
+            outcome = "You Lost";
           }
           setResult({
             outcome: outcome,
-            method: data.payload.method
-          })
-          console.log(data.payload)
+            method: data.payload.method,
+          });
+          console.log(data.payload);
           break;
       }
     };
-  }, [socket,color]);
+  }, [socket, color]);
 
   if (!socket) {
     return <div>Connecting...</div>;
@@ -84,33 +85,76 @@ function PlayChess() {
 
   return (
     <div className="h-screen w-screen bg-customGray-100 flex justify-center items-center">
-      <div className="flex justify-center w-3/5">
-        <div className="w-1/2 relative">
+      <div className="flex flex-col md:flex-row justify-center w-3/5">
+        <div className="md:w-1/2 relative">
           <Chessboard
             id={"BasicBoard"}
             position={fen}
             boardOrientation={color}
             onPieceDrop={onDrop}
+            autoPromoteToQueen={true}
             customDarkSquareStyle={{ backgroundColor: "#4B7399" }}
             customLightSquareStyle={{ backgroundColor: "#EAE9D2" }}
             // onPieceClick={}
           />
-          {result && <GameOverPopup method={result.method} outcome={result.outcome} />} 
+          {result && (
+            <GameOverPopup method={result.method} outcome={result.outcome} />
+          )}
         </div>
-        <div className="w-1/2 bg-customGray-200 flex justify-center items-center gap-10">
+        <div className="md:w-1/2 min-h-40 bg-customGray-200 flex justify-center items-center gap-10">
           <div className="flex flex-col justify-evenly items-center w-4/5 h-4/5">
-            <button
-              className="text-white text-xl font-bold bg-customBlue-100 hover:bg-customBlue-200 px-16 py-4 rounded-lg"
-              onClick={() => {
-                socket.send(
-                  JSON.stringify({
-                    type: INIT_GAME,
-                  })
-                );
-              }}
-            >
-              Play
-            </button>
+            {/* Conditional rendering for 3 states 
+            1) No match is requested search=undefined
+            2) Match requested but waiting for opponent to accept search=true
+            3) Match accepted search=false */}
+            {
+              (search === undefined) ?
+              <button
+                className="text-white text-xl font-bold bg-customBlue-100 hover:bg-customBlue-200 px-16 py-4 rounded-lg"
+                onClick={() => {
+                  socket.send(
+                    JSON.stringify({
+                      type: INIT_GAME,
+                    })
+                  );
+                  setSearch(true)
+                }}
+              >
+                Play
+              </button>
+              :
+              (search === true) ?
+              <div className="flex justify-center items-center gap-4">
+                <Spinner/>
+                <p className="text-white ">Searching for opponents...</p>
+              </div>
+              :
+              <div className="flex flex-col justify-center items-center gap-2">
+                <p className="text-white text-xl font-bold">The Game Begins!</p>
+                <p className="text-white text-lg font-bold">You are {color}</p>
+              </div>
+
+            }
+            {/* {searching ? (
+              <div className="flex justify-center items-center">
+                <Spinner/>
+                <p className="text-white ">Searching for opponents...</p>
+              </div>
+            ) : (
+              <button
+                className="text-white text-xl font-bold bg-customBlue-100 hover:bg-customBlue-200 px-16 py-4 rounded-lg"
+                onClick={() => {
+                  socket.send(
+                    JSON.stringify({
+                      type: INIT_GAME,
+                    })
+                  );
+                  setSearching(true)
+                }}
+              >
+                Play
+              </button>
+            )} */}
           </div>
         </div>
       </div>

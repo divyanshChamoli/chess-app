@@ -49,6 +49,7 @@ export class Game{
             this.game.move(move)      
         }
         catch(e){
+            console.log(e)
             return
         }
         
