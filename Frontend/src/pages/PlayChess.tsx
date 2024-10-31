@@ -22,6 +22,7 @@ function PlayChess() {
   const [fen, setFen] = useState<string>("start");
   const [result, setResult] = useState<Result | null>(null);
   const [search, setSearch] = useState<boolean | undefined>(undefined)
+  const [moveCount, setMoveCount] = useState(0)
 
   useEffect(() => {
     if (!socket) {
@@ -35,6 +36,7 @@ function PlayChess() {
           setSearch(false)
           break;
         case MOVE:
+          setMoveCount((cnt)=>cnt+1)
           setFen(data.payload);
           break;
         case GAME_OVER:
@@ -130,8 +132,13 @@ function PlayChess() {
               </div>
               :
               <div className="flex flex-col justify-center items-center gap-2">
-                <p className="text-white text-xl font-bold">The Game Begins!</p>
+                <p className="text-white text-2xl font-bold">The Game Begins!</p>
                 <p className="text-white text-lg font-bold">You are {color}</p>
+                {
+                  moveCount%2===0 ?
+                  <p className="text-white text-lg font-bold">It's white's turn</p> 
+                  : <p className="text-white text-lg font-bold">It's black's turn</p>
+                }
               </div>
 
             }
