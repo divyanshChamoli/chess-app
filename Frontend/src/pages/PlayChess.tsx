@@ -62,6 +62,20 @@ function PlayChess() {
     return <div>Connecting...</div>;
   }
 
+  // function onPromotionCheck(sourceSquare: Square, targetSquare: Square, piece: Piece){
+  //   console.log("sourceSquare",sourceSquare)
+  //   console.log("targetSquare",targetSquare)
+  //   console.log("piece",piece)
+  //   return true
+  // }
+
+  // function onPromotionPieceSelect(piece?: PromotionPieceOption, promoteFromSquare?: Square, promoteToSquare?: Square){
+  //   console.log("piece",piece)
+  //   console.log("promoteFromSquare",promoteFromSquare)
+  //   console.log("promoteToSquare",promoteToSquare)
+  //   return false
+  // }
+  
   const onDrop = (sourceSquare: Square, targetSquare: Square) => {
     // console.log("Drop: src/target", sourceSquare, targetSquare)
     // const move = game.move({
@@ -79,6 +93,7 @@ function PlayChess() {
         move: {
           from: sourceSquare,
           to: targetSquare,
+          // promotion: 'q'
         },
       })
     );
@@ -87,17 +102,17 @@ function PlayChess() {
 
   return (
     <div className="h-screen w-screen bg-customGray-100 flex justify-center items-center">
-      <div className="flex flex-col md:flex-row justify-center w-3/5">
+      <div className="flex flex-col md:flex-row justify-center md:w-3/5 w-full p-1" >
         <div className="md:w-1/2 relative">
           <Chessboard
             id={"BasicBoard"}
             position={fen}
             boardOrientation={color}
             onPieceDrop={onDrop}
-            autoPromoteToQueen={true}
             customDarkSquareStyle={{ backgroundColor: "#4B7399" }}
             customLightSquareStyle={{ backgroundColor: "#EAE9D2" }}
-            // onPieceClick={}
+            // onPromotionCheck={onPromotionCheck}
+            // onPromotionPieceSelect={onPromotionPieceSelect}
           />
           {result && (
             <GameOverPopup method={result.method} outcome={result.outcome} />

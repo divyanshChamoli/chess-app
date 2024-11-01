@@ -1,4 +1,4 @@
-import { Chess, Move } from "chess.js"
+import { Chess } from "chess.js"
 import WebSocket from "ws";
 import { GAME_OVER, GAME_OVER_METHOD, MOVE } from "./messages";
 
@@ -37,7 +37,8 @@ export class Game{
     
     public makeMove(socket: WebSocket, move: {
         from: string,
-        to: string
+        to: string,
+        // promotion: string
     }){
         //check if players turn
         if( (this.moveCount%2===0 && socket === this.player2) || (this.moveCount%2===1 && socket === this.player1) ){
