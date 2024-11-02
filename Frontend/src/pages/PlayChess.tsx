@@ -113,6 +113,8 @@ function PlayChess() {
             customLightSquareStyle={{ backgroundColor: "#EAE9D2" }}
             // onPromotionCheck={onPromotionCheck}
             // onPromotionPieceSelect={onPromotionPieceSelect}
+            // showPromotionDialog={false}
+            autoPromoteToQueen={true}
           />
           {result && (
             <GameOverPopup method={result.method} outcome={result.outcome} />

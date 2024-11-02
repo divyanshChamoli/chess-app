@@ -38,7 +38,6 @@ export class Game{
     public makeMove(socket: WebSocket, move: {
         from: string,
         to: string,
-        // promotion: string
     }){
         //check if players turn
         if( (this.moveCount%2===0 && socket === this.player2) || (this.moveCount%2===1 && socket === this.player1) ){
@@ -47,10 +46,10 @@ export class Game{
         
         //validate move
         try{
-            this.game.move(move)      
+            //promote to a queen always
+            this.game.move({...move, promotion: "q"})      
         }
         catch(e){
-            console.log(e)
             return
         }
         
