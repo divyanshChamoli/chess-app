@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Chessboard } from "react-chessboard";
-import { Move, parseSquare,  } from "chessops";
+import { fen, Move, parseSquare,  } from "chessops";
 import { Square } from "react-chessboard/dist/chessboard/types";
 import { Atomic } from "chessops/variant";
 import { makeFen } from "chessops/fen";
 
 function AtomicChess() {
   const [game] = useState(Atomic.default());
-  const [gamefen, setGamefen] = useState(makeFen(game.toSetup()));  
+  const [gamefen, setGamefen] = useState(fen.INITIAL_FEN);  
 
   function onDrop(sourceSquare: Square, targetSquare: Square) {
     const move: Move = {

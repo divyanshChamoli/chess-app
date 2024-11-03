@@ -9,5 +9,7 @@ export const GAME_OVER_METHOD = {
     INSUFFICIENT_MATERIAL : "Insufficient Material",
     THREE_FOLD_REPETITION: "Three Fold Repetition",
     RESIGNATION: "Resignation",
-    TIMEOUT: "Timeout"
+    TIMEOUT: "Timeout",
+    DETONATION: "Detonation",
+    ABANDONMENT: "Abandonment"
 }

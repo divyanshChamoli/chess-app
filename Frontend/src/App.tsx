@@ -4,6 +4,7 @@ import Signup from "./pages/Signup"
 import Signin from "./pages/Signin"
 import PlayChess from "./pages/PlayChess"
 import AtomicChess from "./pages/AtomicChess"
+import StandardChess from "./pages/StandardChess"
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/signin" element={<Signin/>}/>
         <Route path="/play" element={<PlayChess/>}/>
         <Route path="/atomic" element={<AtomicChess/>}/>
+        <Route path="/chess" element={<StandardChess/>}/>
       </Routes>
     </BrowserRouter>
   )
