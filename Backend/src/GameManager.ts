@@ -1,10 +1,11 @@
 import WebSocket from "ws";
-import { Game } from "./Game";
 import { INIT_GAME, MOVE } from "./messages";
+import AtomicChessGame from "./AtomicChessGame";
+import { StandardChessGame } from "./StandardChessGame";
 
 export class GameManager {
   pendingUser: WebSocket | null;
-  games: Game[];
+  games: AtomicChessGame[];
   users: WebSocket[];
 
   constructor() {
@@ -24,7 +25,7 @@ export class GameManager {
   }
 
   startGame(player1: WebSocket, player2: WebSocket) {
-    const game = new Game(player1, player2);
+    const game = new AtomicChessGame(player1, player2);
     this.games.push(game);
     
     player1.send(JSON.stringify({

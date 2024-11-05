@@ -1,22 +1,21 @@
+import { Chess } from "chess.js";
 import WebSocket from "ws";
 import { GAME_OVER, GAME_OVER_METHOD, MOVE } from "./messages";
-import { Atomic } from "chessops/variant";
-import { makeFen } from "chessops/fen";
 
 //When 2 player join, UserManager will start the Game
-export default class AtomicChessGame {
+export class StandardChessGame {
   player1: WebSocket;
   player2: WebSocket;
-  game: Atomic;
+  initialTime: Date;
+  game: Chess;
   moveCount: number;
-  //   initialTime: Date;
 
   public constructor(player1: WebSocket, player2: WebSocket) {
     this.player1 = player1;
     this.player2 = player2;
-    this.game = Atomic.default();
+    this.initialTime = new Date();
+    this.game = new Chess();
     this.moveCount = 0;
-    // this.initialTime = new Date();
   }
 
   private GameOverMethod() {
@@ -27,8 +26,8 @@ export default class AtomicChessGame {
       method = GAME_OVER_METHOD.STALEMATE;
     } else if (this.game.isInsufficientMaterial()) {
       method = GAME_OVER_METHOD.INSUFFICIENT_MATERIAL;
-    } else if (this.game.isVariantEnd()) {
-      method = GAME_OVER_METHOD.DETONATION;
+    } else if (this.game.isThreefoldRepetition()) {
+      method = GAME_OVER_METHOD.THREE_FOLD_REPETITION;
     }
     return method;
   }
@@ -36,8 +35,8 @@ export default class AtomicChessGame {
   public makeMove(
     socket: WebSocket,
     move: {
-      from: number;
-      to: number;
+      from: string;
+      to: string;
     }
   ) {
     //check if players turn
@@ -51,28 +50,16 @@ export default class AtomicChessGame {
     //validate move
     try {
       //promote to a queen always
-      if (this.game.isLegal(move)) {
-        this.game.play(move);
-      } else {
-        return;
-      }
+      this.game.move({ ...move, promotion: "q" });
     } catch (e) {
-      console.log(e);
       return;
     }
 
     //check if checkmate
-    if (this.game.isVariantEnd() || this.game.isEnd() ) {
+    if (this.game.isGameOver()) {
       const winner = this.moveCount % 2 === 0 ? "white" : "black";
       const method = this.GameOverMethod();
-      let draw = false;
-      if (
-        method === GAME_OVER_METHOD.STALEMATE ||
-        method === GAME_OVER_METHOD.INSUFFICIENT_MATERIAL ||
-        method === GAME_OVER_METHOD.THREE_FOLD_REPETITION
-      ) {
-        draw = true;
-      }
+      const draw = this.game.isDraw();
 
       this.player1.send(
         JSON.stringify({
@@ -100,19 +87,13 @@ export default class AtomicChessGame {
     this.player1.send(
       JSON.stringify({
         type: MOVE,
-        payload: {
-          fen: makeFen(this.game.toSetup()),
-          move: move,
-        },
+        payload: this.game.fen(),
       })
     );
     this.player2.send(
       JSON.stringify({
         type: MOVE,
-        payload: {
-          fen: makeFen(this.game.toSetup()),
-          move: move,
-        },
+        payload: this.game.fen(),
       })
     );
 

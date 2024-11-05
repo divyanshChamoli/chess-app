@@ -2,26 +2,20 @@ import { useState, useEffect } from "react";
 import { Chessboard } from "react-chessboard";
 import { Square } from "react-chessboard/dist/chessboard/types";
 import { useSocket } from "../hooks/useSocket";
-import {
-  GAME_OVER,
-  INIT_GAME,
-  MOVE,
-} from "../utils/messages";
+import { GAME_OVER, INIT_GAME, MOVE } from "../utils/messages";
 import GameOverPopup from "../components/GameOverPopup";
-import Spinner from "../components/Spinner";
-
-interface Result {
-  outcome: string;
-  method: string;
-}
+import GameStatus from "../components/GameStatus";
 
 function StandardChess() {
   const socket = useSocket();
   const [color, setColor] = useState<"white" | "black">();
   const [fen, setFen] = useState<string>("start");
-  const [result, setResult] = useState<Result | null>(null);
-  const [search, setSearch] = useState<boolean | undefined>(undefined)
-  const [moveCount, setMoveCount] = useState(0)
+  const [result, setResult] = useState<{
+    outcome: string;
+    method: string;
+  } | null>(null);
+  const [search, setSearch] = useState<boolean | undefined>(undefined);
+  const [moveCount, setMoveCount] = useState(0);
 
   useEffect(() => {
     if (!socket) {
@@ -32,10 +26,10 @@ function StandardChess() {
       switch (data.type) {
         case INIT_GAME:
           setColor(data.payload);
-          setSearch(false)
+          setSearch(false);
           break;
         case MOVE:
-          setMoveCount((cnt)=>cnt+1)
+          setMoveCount((cnt) => cnt + 1);
           setFen(data.payload);
           break;
         case GAME_OVER:
@@ -75,9 +69,18 @@ function StandardChess() {
     return true;
   };
 
+  const startGame = () => {
+    socket.send(
+      JSON.stringify({
+        type: INIT_GAME,
+      })
+    );
+    setSearch(true);
+  };
+
   return (
     <div className="h-screen w-screen bg-customGray-100 flex justify-center items-center">
-      <div className="flex flex-col md:flex-row justify-center md:w-3/5 w-full p-1" >
+      <div className="flex flex-col md:flex-row justify-center md:w-3/5 w-full p-1">
         <div className="md:w-1/2 relative">
           <Chessboard
             id={"BasicBoard"}
@@ -92,47 +95,12 @@ function StandardChess() {
             <GameOverPopup method={result.method} outcome={result.outcome} />
           )}
         </div>
-        <div className="md:w-1/2 min-h-40 bg-customGray-200 flex justify-center items-center gap-10">
-          <div className="flex flex-col justify-evenly items-center w-4/5 h-4/5">
-            {/* Conditional rendering for 3 states 
-            1) No match is requested search=undefined
-            2) Match requested but waiting for opponent to accept search=true
-            3) Match accepted search=false */}
-            {
-              (search === undefined) ?
-              <button
-                className="text-white text-xl font-bold bg-customBlue-100 hover:bg-customBlue-200 px-16 py-4 rounded-lg"
-                onClick={() => {
-                  socket.send(
-                    JSON.stringify({
-                      type: INIT_GAME,
-                    })
-                  );
-                  setSearch(true)
-                }}
-              >
-                Play
-              </button>
-              :
-              (search === true) ?
-              <div className="flex justify-center items-center gap-4">
-                <Spinner/>
-                <p className="text-white ">Searching for opponents...</p>
-              </div>
-              :
-              <div className="flex flex-col justify-center items-center gap-2">
-                <p className="text-white text-2xl font-bold">The Game Begins!</p>
-                <p className="text-white text-lg font-bold">You are {color}</p>
-                {
-                  moveCount%2===0 ?
-                  <p className="text-white text-lg font-bold">It's white's turn</p> 
-                  : <p className="text-white text-lg font-bold">It's black's turn</p>
-                }
-              </div>
-
-            }
-          </div>
-        </div>
+        <GameStatus
+          color={color}
+          startGame={startGame}
+          moveCount={moveCount}
+          search={search}
+        />
       </div>
     </div>
   );
