@@ -5,6 +5,7 @@ import Signin from "./pages/Signin"
 import PlayChess from "./pages/PlayChess"
 import AtomicChess from "./pages/AtomicChess"
 import StandardChess from "./pages/StandardChess"
+import "./App.css"
 
 function App() {
   return (

@@ -1,0 +1,23 @@
+/* Explosion effect with pulsing glow */
+.explosion {
+    background-color: rgba(255, 0, 0, 0.7);  /* Red background */
+    opacity: 0.9;
+    box-shadow: 0 0 10px 5px rgba(255, 0, 0, 0.5);  /* Initial red glow */
+    animation: pulse-glow 1.5s infinite ease-in-out;
+}
+
+/* Keyframes for pulsing glow effect */
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 10px 5px rgba(255, 0, 0, 0.5);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 12px 6px rgba(255, 0, 0, 1);
+        transform: scale(1.01);  /* Slightly larger for "explosion" effect */
+    }
+    100% {
+        box-shadow: 0 0 10px 5px rgba(255, 0, 0, 0.5);
+        transform: scale(1);
+    }
+}

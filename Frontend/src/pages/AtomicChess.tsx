@@ -8,6 +8,8 @@ import { useSocket } from "../hooks/useSocket";
 import { INIT_GAME, MOVE, GAME_OVER } from "../utils/messages";
 import GameOverPopup from "../components/GameOverPopup";
 import GameStatus from "../components/GameStatus";
+import moveSound from "../assets/move-self.mp3";
+import { getAdjacentSquares } from "../utils/chessFunctions";
 
 function AtomicChess() {
   const socket = useSocket();
@@ -21,6 +23,7 @@ function AtomicChess() {
   const [search, setSearch] = useState<boolean | undefined>(undefined);
   const [moveCount, setMoveCount] = useState(0);
   const [validMoves, setValidMoves] = useState<Square[]>([]);
+  const [bombedSquares, setBombedSquares] = useState<string[]>([]);
 
   useEffect(() => {
     if (!socket) {
@@ -69,17 +72,30 @@ function AtomicChess() {
       from: parseSquare(sourceSquare),
       to: parseSquare(targetSquare),
     };
+    setBombedSquares([]);
     if (game.isLegal(move)) {
       //set fen so that user sees fast UI updates, verify moves again on backend
       //NOTE: Dont do game.play(move) here as it breaks things, do this only when backend broadcasts message to both players
+
+      //If move has resulted in a capture
+      if (game.board.occupied.has(move.to)) {
+        const adjSquares = getAdjacentSquares(targetSquare);
+        setBombedSquares((prevSquares) => [
+          ...prevSquares,
+          ...adjSquares,
+          targetSquare,
+        ]);
+      }
       setGamefen(makeFen(game.toSetup()));
+      // const newAudio = new Audio(moveSound)
+      // newAudio.play()
       socket.send(
         JSON.stringify({
           type: MOVE,
           move: move,
         })
       );
-      setValidMoves([])
+      setValidMoves([]);
       return true;
     } else {
       return false;
@@ -87,12 +103,16 @@ function AtomicChess() {
   };
 
   const pieceClick = (piece: Piece, square: Square) => {
-    //If not players turn => dont show them opponents valid moves 
-    if(moveCount%2 === 0 && color === "black" || moveCount%2 === 1 && color === "white"){
-      return
-      piece //npm run build requires using it
+    //If not players turn => dont show them opponents valid moves
+    if (
+      (moveCount % 2 === 0 && color === "black") ||
+      (moveCount % 2 === 1 && color === "white")
+    ) {
+      return;
+      piece; //npm run build requires using it
     }
     setValidMoves([]);
+    setBombedSquares([]);
     const pieceValidMoves = game.dests(parseSquare(square));
     for (let move of pieceValidMoves) {
       setValidMoves((currMoves) => [...currMoves, makeSquare(move)]);
@@ -101,12 +121,29 @@ function AtomicChess() {
 
   const getValidMoveStyles = () => {
     const styles: any = {};
-    validMoves.forEach((square) => {
-      styles[square] = {
-        outline: `3px solid #06FF00`,
-        outlineOffset: "-3px",
-      };
-    });
+    if (bombedSquares.length !== 0) {
+      bombedSquares.forEach((square) => {
+        styles[square] = {
+          backgroundColor: "#B00000",
+          opacity: 0.9,
+          boxShadow: "0 0 10px 5px rgba(255, 0, 0, 0.5)", // Pulsing red glow
+          animation: "1.5s infinite"
+        }
+        // styles[square] = {
+        //   backgroundColor: "rgba(255, 0, 0, 0.7)",
+        //   opacity: 0.9,
+        //   boxShadow: "0 0 10px 5px rgba(255, 0, 0, 0.5)",
+        //   animation: "pulse-glow 1.5s infinite ease-in-out",
+        // };
+      });
+    } else {
+      validMoves.forEach((square) => {
+        styles[square] = {
+          outline: `3px solid #06FF00`,
+          outlineOffset: "-3px",
+        };
+      });
+    }
     return styles;
   };
 
@@ -138,6 +175,13 @@ function AtomicChess() {
             <GameOverPopup method={result.method} outcome={result.outcome} />
           )}
         </div>
+        {/* <button onClick={()=>{
+          const newAudio = new Audio(moveSound)
+          newAudio.play()
+          // <audio src={moveSound}/>
+          console.log("Click")
+        }} >PLAYYYYYYYYYYYY</button> */}
+
         <GameStatus
           color={color}
           startGame={startGame}
