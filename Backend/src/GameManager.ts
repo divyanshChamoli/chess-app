@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { INIT_GAME, MOVE } from "./messages";
+import { ADDITIONAL, BOMBED_SQUARES, INIT_GAME, MOVE} from "./messages";
 import AtomicChessGame from "./AtomicChessGame";
 import { StandardChessGame } from "./StandardChessGame";
 
@@ -52,12 +52,37 @@ export class GameManager {
           break
         case MOVE:
           //find the game and send that move
-          const game = this.games.find(
+          let game = this.games.find(
             (game) => game.player1 === socket || game.player2 === socket
           );
           game && game.makeMove(socket, message.move)
           break
-      }
-    });
+        case ADDITIONAL: 
+          //find the game and send those styles to other player
+          console.log(message)
+          let mygame = this.games.find(
+            (game) => game.player1 === socket || game.player2 === socket
+          );      
+          mygame?.player1.send(
+            JSON.stringify({
+              type: ADDITIONAL,
+              payload: {
+                reciever: BOMBED_SQUARES,
+                bombedSquares: message.payload.bombedSquares
+              },
+            })
+          );      
+          mygame?.player2.send(
+            JSON.stringify({
+              type: ADDITIONAL,
+              payload: {
+                reciever: BOMBED_SQUARES,
+                bombedSquares: message.payload.bombedSquares
+              },
+            })
+          );      
+          break;
+        }
+      });
   }
 }

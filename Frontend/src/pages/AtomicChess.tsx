@@ -5,11 +5,12 @@ import { Piece, Square } from "react-chessboard/dist/chessboard/types";
 import { Atomic } from "chessops/variant";
 import { makeFen } from "chessops/fen";
 import { useSocket } from "../hooks/useSocket";
-import { INIT_GAME, MOVE, GAME_OVER } from "../utils/messages";
+import { INIT_GAME, MOVE, GAME_OVER, BOMBED_SQUARES, ADDITIONAL } from "../utils/messages";
 import GameOverPopup from "../components/GameOverPopup";
 import GameStatus from "../components/GameStatus";
-import moveSound from "../assets/move-self.mp3";
+// import moveSound from "../assets/move-self.mp3";
 import { getAdjacentSquares } from "../utils/chessFunctions";
+import { bombedSquareStyle } from "../utils/inlineStyles";
 
 function AtomicChess() {
   const socket = useSocket();
@@ -44,6 +45,9 @@ function AtomicChess() {
           setMoveCount((cnt) => cnt + 1);
           setGamefen(fen);
           break;
+        case ADDITIONAL: 
+          setBombedSquares(data.payload.bombedSquares)
+          break
         case GAME_OVER:
           let outcome = "";
           if (data.payload.draw === true) {
@@ -85,6 +89,14 @@ function AtomicChess() {
           ...adjSquares,
           targetSquare,
         ]);
+        //Send to other player
+        socket.send(JSON.stringify({
+          type: ADDITIONAL,
+          payload: {
+            reciever: BOMBED_SQUARES,
+            bombedSquares: [...adjSquares,targetSquare],  //Not sending bombedSquares directly as state doesnt update  
+          }
+        }))
       }
       setGamefen(makeFen(game.toSetup()));
       // const newAudio = new Audio(moveSound)
@@ -123,18 +135,7 @@ function AtomicChess() {
     const styles: any = {};
     if (bombedSquares.length !== 0) {
       bombedSquares.forEach((square) => {
-        styles[square] = {
-          backgroundColor: "#B00000",
-          opacity: 0.9,
-          boxShadow: "0 0 10px 5px rgba(255, 0, 0, 0.5)", // Pulsing red glow
-          animation: "1.5s infinite"
-        }
-        // styles[square] = {
-        //   backgroundColor: "rgba(255, 0, 0, 0.7)",
-        //   opacity: 0.9,
-        //   boxShadow: "0 0 10px 5px rgba(255, 0, 0, 0.5)",
-        //   animation: "pulse-glow 1.5s infinite ease-in-out",
-        // };
+        styles[square] = bombedSquareStyle
       });
     } else {
       validMoves.forEach((square) => {
