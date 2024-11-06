@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Chessboard } from "react-chessboard";
-import { fen, Move, parseSquare } from "chessops";
-import { Square } from "react-chessboard/dist/chessboard/types";
+import { fen, makeSquare, Move, parseSquare } from "chessops";
+import { Piece, Square } from "react-chessboard/dist/chessboard/types";
 import { Atomic } from "chessops/variant";
 import { makeFen } from "chessops/fen";
 import { useSocket } from "../hooks/useSocket";
@@ -20,6 +20,7 @@ function AtomicChess() {
   } | null>(null);
   const [search, setSearch] = useState<boolean | undefined>(undefined);
   const [moveCount, setMoveCount] = useState(0);
+  const [validMoves, setValidMoves] = useState<Square[]>([]);
 
   useEffect(() => {
     if (!socket) {
@@ -30,14 +31,14 @@ function AtomicChess() {
       switch (data.type) {
         case INIT_GAME:
           setColor(data.payload);
-          setSearch(false)
+          setSearch(false);
           break;
         case MOVE:
-          const move = data.payload.move
-          const fen = data.payload.fen
+          const move = data.payload.move;
+          const fen = data.payload.fen;
           //already validated move comes from backend
-          game.play(move)
-          setMoveCount((cnt)=>cnt+1)          
+          game.play(move);
+          setMoveCount((cnt) => cnt + 1);
           setGamefen(fen);
           break;
         case GAME_OVER:
@@ -71,18 +72,43 @@ function AtomicChess() {
     if (game.isLegal(move)) {
       //set fen so that user sees fast UI updates, verify moves again on backend
       //NOTE: Dont do game.play(move) here as it breaks things, do this only when backend broadcasts message to both players
-      setGamefen(makeFen(game.toSetup())); 
+      setGamefen(makeFen(game.toSetup()));
       socket.send(
         JSON.stringify({
           type: MOVE,
-          move: move
+          move: move,
         })
       );
+      setValidMoves([])
       return true;
     } else {
       return false;
     }
-  }
+  };
+
+  const pieceClick = (piece: Piece, square: Square) => {
+    //If not players turn => dont show them opponents valid moves 
+    if(moveCount%2 === 0 && color === "black" || moveCount%2 === 1 && color === "white"){
+      return
+      piece //npm run build requires using it
+    }
+    setValidMoves([]);
+    const pieceValidMoves = game.dests(parseSquare(square));
+    for (let move of pieceValidMoves) {
+      setValidMoves((currMoves) => [...currMoves, makeSquare(move)]);
+    }
+  };
+
+  const getValidMoveStyles = () => {
+    const styles: any = {};
+    validMoves.forEach((square) => {
+      styles[square] = {
+        outline: `3px solid #06FF00`,
+        outlineOffset: "-3px",
+      };
+    });
+    return styles;
+  };
 
   const startGame = () => {
     socket.send(
@@ -101,8 +127,10 @@ function AtomicChess() {
             id={"BasicBoard"}
             position={gamefen}
             onPieceDrop={onDrop}
+            onPieceClick={pieceClick}
             customDarkSquareStyle={{ backgroundColor: "#4B7399" }}
             customLightSquareStyle={{ backgroundColor: "#EAE9D2" }}
+            customSquareStyles={getValidMoveStyles()}
             autoPromoteToQueen={true}
             boardOrientation={color}
           />
