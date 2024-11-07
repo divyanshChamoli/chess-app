@@ -24,3 +24,12 @@ export const getAdjacentSquares = (square: Square): string[] => {
   
     return adjacentSquares;
   };
+
+  export function isOpponentsTurn(moveCount: number, color: "white" | "black" | undefined){
+    if (
+      (moveCount % 2 === 0 && color === "black") ||
+      (moveCount % 2 === 1 && color === "white")
+    ) {
+      return true;
+    }
+  }

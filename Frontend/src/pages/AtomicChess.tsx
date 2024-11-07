@@ -16,7 +16,7 @@ import {
 } from "../utils/messages";
 import GameOverPopup from "../components/GameOverPopup";
 import GameStatus from "../components/GameStatus";
-import { getAdjacentSquares } from "../utils/chessFunctions";
+import { getAdjacentSquares, isOpponentsTurn } from "../utils/chessFunctions";
 import { bombedSquareStyle } from "../utils/inlineStyles";
 import { useSounds } from "../hooks/useSounds";
 
@@ -33,7 +33,8 @@ function AtomicChess() {
   const [moveCount, setMoveCount] = useState(0);
   const [validMoves, setValidMoves] = useState<Square[]>([]);
   const [bombedSquares, setBombedSquares] = useState<string[]>([]);
-  const { MoveSound, CaptureSound, GamestartSound, IllegalmoveSound } = useSounds();
+  const { MoveSound, CaptureSound, GamestartSound, IllegalmoveSound } =
+    useSounds();
 
   useEffect(() => {
     if (!socket) {
@@ -45,19 +46,18 @@ function AtomicChess() {
         case INIT_GAME:
           setColor(data.payload);
           setSearch(false);
-          GamestartSound()
+          GamestartSound();
           break;
         case MOVE:
           const move = data.payload.move;
           const fen = data.payload.fen;
-          //already validated move comes from backend
-          if(data.payload.moveType === CAPTURE){
-            CaptureSound()
+          // already validated move comes from backend
+          if (data.payload.moveType === CAPTURE) {
+            CaptureSound();
+          } else {
+            MoveSound();
           }
-          else{
-            MoveSound()
-          }
-          
+
           game.play(move);
           setMoveCount((cnt) => cnt + 1);
           setGamefen(fen);
@@ -88,35 +88,51 @@ function AtomicChess() {
     return <div>Connecting...</div>;
   }
 
-  const onDrop = (sourceSquare: Square, targetSquare: Square) => {
+  const onDrop = (sourceSquare: Square, targetSquare: Square, piece: Piece) => {
     const move: Move = {
       from: parseSquare(sourceSquare),
       to: parseSquare(targetSquare),
     };
+    if (isOpponentsTurn(moveCount, color)) {
+      return false;
+    }
     setBombedSquares([]);
     if (game.isLegal(move)) {
       //set fen so that user sees fast UI updates, verify moves again on backend
       //NOTE: Dont do game.play(move) here as it breaks things, do this only when backend broadcasts message to both players
 
       //If move has resulted in a capture
+      // console.log("W",game.castles.path.black)
+      // console.log("B",game.castles.path.white)
+
       if (game.board.occupied.has(move.to)) {
-        const adjSquares = getAdjacentSquares(targetSquare);
-        setBombedSquares((prevSquares) => [
-          ...prevSquares,
-          ...adjSquares,
-          targetSquare,
-        ]);
-        CaptureSound()
-        //Send to other player
-        socket.send(
-          JSON.stringify({
-            type: ADDITIONAL,
-            payload: {
-              reciever: BOMBED_SQUARES,
-              bombedSquares: [...adjSquares, targetSquare], //Not sending bombedSquares directly as state doesnt update
-            },
-          })
-        );
+        //castle temp logic
+        if (
+          (sourceSquare === "e1" && targetSquare === "h1" && piece === "wK") ||
+          (sourceSquare === "e1" && targetSquare === "a1" && piece === "wK") ||
+          (sourceSquare === "e8" && targetSquare === "h8" && piece === "bK") ||
+          (sourceSquare === "e8" && targetSquare === "a8" && piece === "bK")
+        ) {
+          //Do nothing
+        } else {
+          const adjSquares = getAdjacentSquares(targetSquare);
+          setBombedSquares((prevSquares) => [
+            ...prevSquares,
+            ...adjSquares,
+            targetSquare,
+          ]);
+          CaptureSound();
+          //Send to other player
+          socket.send(
+            JSON.stringify({
+              type: ADDITIONAL,
+              payload: {
+                reciever: BOMBED_SQUARES,
+                bombedSquares: [...adjSquares, targetSquare], //Not sending bombedSquares directly as state doesnt update
+              },
+            })
+          );
+        }
       }
       setGamefen(makeFen(game.toSetup()));
       // const newAudio = new Audio(moveSound)
@@ -131,20 +147,24 @@ function AtomicChess() {
       setValidMoves([]);
       return true;
     } else {
-      IllegalmoveSound()
+      IllegalmoveSound();
       return false;
     }
   };
 
   const pieceClick = (piece: Piece, square: Square) => {
     //If not players turn => dont show them opponents valid moves
-    if (
-      (moveCount % 2 === 0 && color === "black") ||
-      (moveCount % 2 === 1 && color === "white")
-    ) {
+    if (isOpponentsTurn(moveCount, color)) {
       return;
       piece; //npm run build requires using it
     }
+    // if (
+    //   (moveCount % 2 === 0 && color === "black") ||
+    //   (moveCount % 2 === 1 && color === "white")
+    // ) {
+    //   return;
+    //   piece; //npm run build requires using it
+    // }
     setValidMoves([]);
     setBombedSquares([]);
     const pieceValidMoves = game.dests(parseSquare(square));
@@ -174,7 +194,7 @@ function AtomicChess() {
     socket.send(
       JSON.stringify({
         type: INIT_GAME,
-        variant : ATOMIC,
+        variant: ATOMIC,
       })
     );
     setSearch(true);
