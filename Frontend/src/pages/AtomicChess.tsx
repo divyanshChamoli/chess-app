@@ -5,12 +5,19 @@ import { Piece, Square } from "react-chessboard/dist/chessboard/types";
 import { Atomic } from "chessops/variant";
 import { makeFen } from "chessops/fen";
 import { useSocket } from "../hooks/useSocket";
-import { INIT_GAME, MOVE, GAME_OVER, BOMBED_SQUARES, ADDITIONAL } from "../utils/messages";
+import {
+  INIT_GAME,
+  MOVE,
+  GAME_OVER,
+  BOMBED_SQUARES,
+  ADDITIONAL,
+  CAPTURE,
+} from "../utils/messages";
 import GameOverPopup from "../components/GameOverPopup";
 import GameStatus from "../components/GameStatus";
-// import moveSound from "../assets/move-self.mp3";
 import { getAdjacentSquares } from "../utils/chessFunctions";
 import { bombedSquareStyle } from "../utils/inlineStyles";
+import { useSounds } from "../hooks/useSounds";
 
 function AtomicChess() {
   const socket = useSocket();
@@ -25,6 +32,7 @@ function AtomicChess() {
   const [moveCount, setMoveCount] = useState(0);
   const [validMoves, setValidMoves] = useState<Square[]>([]);
   const [bombedSquares, setBombedSquares] = useState<string[]>([]);
+  const { MoveSound, CaptureSound, GamestartSound, IllegalmoveSound } = useSounds();
 
   useEffect(() => {
     if (!socket) {
@@ -36,18 +44,26 @@ function AtomicChess() {
         case INIT_GAME:
           setColor(data.payload);
           setSearch(false);
+          GamestartSound()
           break;
         case MOVE:
           const move = data.payload.move;
           const fen = data.payload.fen;
           //already validated move comes from backend
+          if(data.payload.moveType === CAPTURE){
+            CaptureSound()
+          }
+          else{
+            MoveSound()
+          }
+          
           game.play(move);
           setMoveCount((cnt) => cnt + 1);
           setGamefen(fen);
           break;
-        case ADDITIONAL: 
-          setBombedSquares(data.payload.bombedSquares)
-          break
+        case ADDITIONAL:
+          setBombedSquares(data.payload.bombedSquares);
+          break;
         case GAME_OVER:
           let outcome = "";
           if (data.payload.draw === true) {
@@ -89,18 +105,22 @@ function AtomicChess() {
           ...adjSquares,
           targetSquare,
         ]);
+        CaptureSound()
         //Send to other player
-        socket.send(JSON.stringify({
-          type: ADDITIONAL,
-          payload: {
-            reciever: BOMBED_SQUARES,
-            bombedSquares: [...adjSquares,targetSquare],  //Not sending bombedSquares directly as state doesnt update  
-          }
-        }))
+        socket.send(
+          JSON.stringify({
+            type: ADDITIONAL,
+            payload: {
+              reciever: BOMBED_SQUARES,
+              bombedSquares: [...adjSquares, targetSquare], //Not sending bombedSquares directly as state doesnt update
+            },
+          })
+        );
       }
       setGamefen(makeFen(game.toSetup()));
       // const newAudio = new Audio(moveSound)
       // newAudio.play()
+      MoveSound();
       socket.send(
         JSON.stringify({
           type: MOVE,
@@ -110,6 +130,7 @@ function AtomicChess() {
       setValidMoves([]);
       return true;
     } else {
+      IllegalmoveSound()
       return false;
     }
   };
@@ -135,7 +156,7 @@ function AtomicChess() {
     const styles: any = {};
     if (bombedSquares.length !== 0) {
       bombedSquares.forEach((square) => {
-        styles[square] = bombedSquareStyle
+        styles[square] = bombedSquareStyle;
       });
     } else {
       validMoves.forEach((square) => {
@@ -159,7 +180,7 @@ function AtomicChess() {
 
   return (
     <div className="h-screen w-screen bg-customGray-100 flex justify-center items-center">
-      <div className="flex flex-col md:flex-row justify-center md:w-3/5 w-full p-1">
+      <div className="flex flex-col md:flex-row justify-center md:w-5/6 w-full p-1">
         <div className="md:w-1/2 relative">
           <Chessboard
             id={"BasicBoard"}
@@ -176,13 +197,6 @@ function AtomicChess() {
             <GameOverPopup method={result.method} outcome={result.outcome} />
           )}
         </div>
-        {/* <button onClick={()=>{
-          const newAudio = new Audio(moveSound)
-          newAudio.play()
-          // <audio src={moveSound}/>
-          console.log("Click")
-        }} >PLAYYYYYYYYYYYY</button> */}
-
         <GameStatus
           color={color}
           startGame={startGame}

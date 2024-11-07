@@ -4,6 +4,10 @@ export const MOVE = "move";
 export const GAME_OVER = "game_over";
 export const ADDITIONAL = "additional"
 export const BOMBED_SQUARES = "bombed_squares"
+export const CHECK = "check"
+export const CAPTURE = "capture"
+export const CASTLE = "castle"
+export const CHECKMATE = "checkmate"
 
 export const GAME_OVER_METHOD = {
     CHECKMATE: "Checkmate",

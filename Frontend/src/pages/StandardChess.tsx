@@ -80,7 +80,7 @@ function StandardChess() {
 
   return (
     <div className="h-screen w-screen bg-customGray-100 flex justify-center items-center">
-      <div className="flex flex-col md:flex-row justify-center md:w-3/5 w-full p-1">
+      <div className="flex flex-col md:flex-row justify-center md:w-5/6 w-full p-1">
         <div className="md:w-1/2 relative">
           <Chessboard
             id={"BasicBoard"}

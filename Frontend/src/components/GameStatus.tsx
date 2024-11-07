@@ -36,6 +36,7 @@ function GameStatus({search , startGame, moveCount, color}: GameStatusProps) {
             ) : (
               <p className="text-white text-lg font-bold">It's black's turn</p>
             )}
+            <p className="text-white text-lg font-bold">Drag to move Piece</p>
           </div>
         )}
       </div>

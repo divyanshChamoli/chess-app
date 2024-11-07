@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { GAME_OVER, GAME_OVER_METHOD, MOVE } from "./messages";
+import { CAPTURE, GAME_OVER, GAME_OVER_METHOD, MOVE } from "./messages";
 import { Atomic } from "chessops/variant";
 import { makeFen } from "chessops/fen";
 
@@ -9,14 +9,12 @@ export default class AtomicChessGame {
   player2: WebSocket;
   game: Atomic;
   moveCount: number;
-  //   initialTime: Date;
 
   public constructor(player1: WebSocket, player2: WebSocket) {
     this.player1 = player1;
     this.player2 = player2;
     this.game = Atomic.default();
     this.moveCount = 0;
-    // this.initialTime = new Date();
   }
 
   private GameOverMethod() {
@@ -48,6 +46,13 @@ export default class AtomicChessGame {
       return;
     }
 
+    let moveType;
+    
+    //check if capture
+    if (this.game.board.occupied.has(move.to)) {
+      moveType = CAPTURE
+    }
+    
     //validate move
     try {
       //promote to a queen always
@@ -103,6 +108,7 @@ export default class AtomicChessGame {
         payload: {
           fen: makeFen(this.game.toSetup()),
           move: move,
+          moveType: moveType
         },
       })
     );
