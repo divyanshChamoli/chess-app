@@ -108,7 +108,7 @@ export default class AtomicChessGame {
         payload: {
           fen: makeFen(this.game.toSetup()),
           move: move,
-          moveType: moveType
+          "moveType": moveType
         },
       })
     );
@@ -118,6 +118,7 @@ export default class AtomicChessGame {
         payload: {
           fen: makeFen(this.game.toSetup()),
           move: move,
+          "moveType": moveType
         },
       })
     );

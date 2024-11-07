@@ -1,15 +1,16 @@
 import WebSocket from "ws";
-import { ADDITIONAL, BOMBED_SQUARES, INIT_GAME, MOVE} from "./messages";
+import { ADDITIONAL, BOMBED_SQUARES, INIT_GAME, MOVE, ATOMIC, STANDARD} from "./messages";
 import AtomicChessGame from "./AtomicChessGame";
 import { StandardChessGame } from "./StandardChessGame";
 
 export class GameManager {
-  pendingUser: WebSocket | null;
-  games: AtomicChessGame[];
+  // pendingUsers: {variant: WebSocket}[]
+  pendingUsers: Record<string, WebSocket>[]
+  games: (AtomicChessGame | StandardChessGame)[];
   users: WebSocket[];
 
   constructor() {
-    this.pendingUser = null;
+    this.pendingUsers = []; 
     this.games = [];
     this.users = [];
   }
@@ -24,9 +25,15 @@ export class GameManager {
     //remove user from the game
   }
 
-  startGame(player1: WebSocket, player2: WebSocket) {
-    const game = new AtomicChessGame(player1, player2);
-    this.games.push(game);
+  startGame(player1: WebSocket, player2: WebSocket, variant: string) {
+    if(variant === ATOMIC){
+      const game = new AtomicChessGame(player1, player2);
+      this.games.push(game);
+    }
+    if(variant === STANDARD){
+      const game = new StandardChessGame(player1, player2) 
+      this.games.push(game);
+    }
     
     player1.send(JSON.stringify({
         type: INIT_GAME,
@@ -43,11 +50,15 @@ export class GameManager {
       const message = JSON.parse(data.toString());
       switch (message.type) {
         case INIT_GAME:
-          if (this.pendingUser === null) {
-            this.pendingUser = socket;
-          } else {
-            this.startGame(this.pendingUser, socket);
-            this.pendingUser = null
+          const variant = message.variant as string
+          const pendingUser = this.pendingUsers.find(user => user.hasOwnProperty(variant))
+          const pendingUserIndex = this.pendingUsers.findIndex(user => user.hasOwnProperty(variant))
+          if(pendingUser){
+            this.startGame(pendingUser[variant], socket, variant)
+            this.pendingUsers.splice(pendingUserIndex,1)
+          }
+          else{
+            this.pendingUsers.push({[variant] : socket})
           }
           break
         case MOVE:
@@ -59,7 +70,6 @@ export class GameManager {
           break
         case ADDITIONAL: 
           //find the game and send those styles to other player
-          console.log(message)
           let mygame = this.games.find(
             (game) => game.player1 === socket || game.player2 === socket
           );      

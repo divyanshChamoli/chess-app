@@ -12,6 +12,7 @@ import {
   BOMBED_SQUARES,
   ADDITIONAL,
   CAPTURE,
+  ATOMIC,
 } from "../utils/messages";
 import GameOverPopup from "../components/GameOverPopup";
 import GameStatus from "../components/GameStatus";
@@ -173,6 +174,7 @@ function AtomicChess() {
     socket.send(
       JSON.stringify({
         type: INIT_GAME,
+        variant : ATOMIC,
       })
     );
     setSearch(true);

@@ -8,6 +8,8 @@ export const CHECK = "check"
 export const CAPTURE = "capture"
 export const CASTLE = "castle"
 export const CHECKMATE = "checkmate"
+export const STANDARD = "standard_chess"
+export const ATOMIC = "atomic_chess"
 
 export const GAME_OVER_METHOD = {
     CHECKMATE: "Checkmate",

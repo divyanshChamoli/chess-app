@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Chessboard } from "react-chessboard";
 import { Square } from "react-chessboard/dist/chessboard/types";
 import { useSocket } from "../hooks/useSocket";
-import { GAME_OVER, INIT_GAME, MOVE } from "../utils/messages";
+import { GAME_OVER, INIT_GAME, MOVE, STANDARD } from "../utils/messages";
 import GameOverPopup from "../components/GameOverPopup";
 import GameStatus from "../components/GameStatus";
 
@@ -73,6 +73,7 @@ function StandardChess() {
     socket.send(
       JSON.stringify({
         type: INIT_GAME,
+        variant: STANDARD,
       })
     );
     setSearch(true);
